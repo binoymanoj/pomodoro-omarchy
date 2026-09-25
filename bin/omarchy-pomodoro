@@ -123,6 +123,7 @@ is_active() {
 
 usage() {
   echo "Usage: omarchy-pomodoro start [work_min] [break_min]"
+  echo "       omarchy-pomodoro break [break_min]"
   echo "       omarchy-pomodoro custom"
   echo "       omarchy-pomodoro toggle-pause"
   echo "       omarchy-pomodoro pause"
@@ -142,6 +143,10 @@ case "$cmd" in
     work=${1:-25}
     break_time=${2:-5}
     send_ipc start "$work" "$break_time"
+    ;;
+  break)
+    break_time=${1:-10}
+    send_ipc startBreak "$break_time"
     ;;
   custom)
     open_custom_prompt

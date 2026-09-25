@@ -98,8 +98,9 @@ BarWidget {
     id: tickTimer
     interval: 1000
     repeat: true
-    running: root.running && !root.paused
+    running: true
     onTriggered: {
+      if (!root.running || root.paused) return
       var now = Date.now()
       var rem = Math.max(0, Math.round((root.targetEnd - now) / 1000))
       root.remainingSeconds = rem
@@ -112,7 +113,6 @@ BarWidget {
 
   // Phase Handling
   function handlePhaseComplete() {
-    tickTimer.running = false
     root.running = false
 
     if (root.phase === "work") {
@@ -130,7 +130,9 @@ BarWidget {
         root.phase = "break"
         root.totalSeconds = root.breakMinutes * 60
         root.remainingSeconds = root.totalSeconds
+        root.targetEnd = 0
         root.paused = true
+        root.running = false
         root.saveState()
       }
     } else if (root.phase === "break") {
@@ -146,8 +148,10 @@ BarWidget {
       } else {
         root.phase = "idle"
         root.paused = false
+        root.running = false
         root.remainingSeconds = root.workMinutes * 60
         root.totalSeconds = root.remainingSeconds
+        root.targetEnd = 0
         root.saveState()
       }
     }
@@ -254,6 +258,11 @@ BarWidget {
       var b = parseInt(breakMin) || root.defaultBreak
       root.startTimer(w, b)
     }
+    function startBreak(breakMin: string): void {
+      var b = parseInt(breakMin) || root.breakMinutes || root.defaultBreak
+      root.breakMinutes = Math.max(1, b)
+      root.startBreakPhase()
+    }
     function togglePause(): void { root.togglePause() }
     function pause(): void { root.pauseTimer() }
     function resume(): void { root.resumeTimer() }
@@ -318,7 +327,7 @@ BarWidget {
         root.workMinutes = parsed.workMinutes || root.defaultWork
         root.breakMinutes = parsed.breakMinutes || root.defaultBreak
         root.cycleCount = parsed.cycleCount || 0
-        root.totalSeconds = parsed.totalSeconds || (root.workMinutes * 60)
+        root.totalSeconds = parsed.totalSeconds || (root.phase === "break" ? (root.breakMinutes * 60) : (root.workMinutes * 60))
 
         if (parsed.running && !parsed.paused && parsed.targetEnd > 0) {
           var now = Date.now()
@@ -331,7 +340,9 @@ BarWidget {
           }
         } else {
           root.running = false
-          root.remainingSeconds = parsed.remainingSeconds !== undefined ? parsed.remainingSeconds : (root.workMinutes * 60)
+          root.remainingSeconds = parsed.remainingSeconds !== undefined
+            ? parsed.remainingSeconds
+            : (root.phase === "break" ? (root.breakMinutes * 60) : (root.workMinutes * 60))
         }
       }
     } catch (e) {
