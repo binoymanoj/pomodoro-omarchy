@@ -1,0 +1,187 @@
+#!/bin/bash
+
+# omarchy:summary=Minimal Pomodoro timer CLI for Omarchy
+# omarchy:args=[start [work] [break]] | custom | toggle-pause | pause | resume | skip | stop | status [-j|--json] | popup
+# omarchy:examples=omarchy-pomodoro start 25 5 | omarchy-pomodoro custom | omarchy-pomodoro toggle-pause | omarchy-pomodoro stop
+
+set -euo pipefail
+
+STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/omarchy-pomodoro"
+STATE_FILE="$STATE_DIR/state.json"
+
+format_remaining() {
+  local seconds=$1
+  local minutes=$((seconds / 60))
+  local remainder=$((seconds % 60))
+
+  if ((minutes > 0 && remainder > 0)); then
+    printf "%02d:%02d" "$minutes" "$remainder"
+  elif ((minutes > 0)); then
+    printf "%02d:00" "$minutes"
+  else
+    printf "00:%02d" "$remainder"
+  fi
+}
+
+send_ipc() {
+  local method=$1
+  shift || true
+  omarchy-shell pomodoro "$method" "$@" 2>/dev/null || true
+}
+
+open_custom_prompt() {
+  local input=""
+  if command -v omarchy-menu-input >/dev/null 2>&1; then
+    input=$(omarchy-menu-input "Pomodoro duration (e.g. 25+5, 50 10, or 30)" || true)
+  elif command -v zenity >/dev/null 2>&1; then
+    input=$(zenity --entry --title="Pomodoro Timer" --text="Enter work and break minutes (e.g. 25+5, 50 10, or 30):" 2>/dev/null || true)
+  fi
+
+  [[ -z "$input" ]] && exit 0
+
+  local nums=($(grep -oE "[0-9]+" <<< "$input"))
+  if ((${#nums[@]} == 0)); then
+    exit 1
+  fi
+
+  local work=${nums[0]:-25}
+  local break_time=${nums[1]:-5}
+
+  send_ipc start "$work" "$break_time"
+}
+
+show_status() {
+  local json_mode=0
+  if [[ ${1:-} == "-j" || ${1:-} == "--json" ]]; then
+    json_mode=1
+  fi
+
+  if [[ ! -f $STATE_FILE ]]; then
+    if ((json_mode)); then
+      echo '{"phase":"idle","running":false,"paused":false,"remainingSeconds":1500,"formatted":"25:00"}'
+    else
+      echo "Pomodoro: Idle (25m)"
+    fi
+    return 0
+  fi
+
+  local raw
+  raw=$(<"$STATE_FILE")
+  if ((json_mode)); then
+    echo "$raw"
+    return 0
+  fi
+
+  local phase running paused target_end rem cycle formatted
+  phase=$(jq -r '.phase // "idle"' <<< "$raw")
+  running=$(jq -r '.running // false' <<< "$raw")
+  paused=$(jq -r '.paused // false' <<< "$raw")
+  target_end=$(jq -r '.targetEnd // 0' <<< "$raw")
+  rem=$(jq -r '.remainingSeconds // 0' <<< "$raw")
+  cycle=$(jq -r '.cycleCount // 0' <<< "$raw")
+
+  if [[ $running == "true" && $paused != "true" && $target_end -gt 0 ]]; then
+    local now_ms
+    now_ms=$(date +%s%3N 2>/dev/null || echo "$(( $(date +%s) * 1000 ))")
+    rem=$(( (target_end - now_ms) / 1000 ))
+    ((rem < 0)) && rem=0
+  fi
+
+  formatted=$(format_remaining "$rem")
+
+  if [[ $phase == "work" ]]; then
+    if [[ $paused == "true" ]]; then
+      echo "󰏤 Focus Session (Paused): $formatted (Cycle #$cycle)"
+    else
+      echo "󰄉 Focus Session: $formatted remaining (Cycle #$cycle)"
+    fi
+  elif [[ $phase == "break" ]]; then
+    if [[ $paused == "true" ]]; then
+      echo "󰏤 Break (Paused): $formatted"
+    else
+      echo "󰤆 Break: $formatted remaining"
+    fi
+  else
+    echo "󰄉 Pomodoro: Idle"
+  fi
+}
+
+is_active() {
+  if [[ ! -f $STATE_FILE ]]; then
+    exit 1
+  fi
+  local running paused phase
+  running=$(jq -r '.running // false' "$STATE_FILE" 2>/dev/null || echo "false")
+  paused=$(jq -r '.paused // false' "$STATE_FILE" 2>/dev/null || echo "false")
+  phase=$(jq -r '.phase // "idle"' "$STATE_FILE" 2>/dev/null || echo "idle")
+
+  if [[ $running == "true" || $paused == "true" || $phase != "idle" ]]; then
+    exit 0
+  fi
+  exit 1
+}
+
+usage() {
+  echo "Usage: omarchy-pomodoro start [work_min] [break_min]"
+  echo "       omarchy-pomodoro custom"
+  echo "       omarchy-pomodoro toggle-pause"
+  echo "       omarchy-pomodoro pause"
+  echo "       omarchy-pomodoro resume"
+  echo "       omarchy-pomodoro skip"
+  echo "       omarchy-pomodoro stop"
+  echo "       omarchy-pomodoro status [-j|--json]"
+  echo "       omarchy-pomodoro popup"
+  echo "       omarchy-pomodoro is-active"
+}
+
+cmd=${1:-status}
+if [[ $# -gt 0 ]]; then shift; fi
+
+case "$cmd" in
+  start)
+    work=${1:-25}
+    break_time=${2:-5}
+    send_ipc start "$work" "$break_time"
+    ;;
+  custom)
+    open_custom_prompt
+    ;;
+  toggle-pause|toggle)
+    send_ipc togglePause
+    ;;
+  pause)
+    send_ipc pause
+    ;;
+  resume)
+    send_ipc resume
+    ;;
+  skip)
+    send_ipc skip
+    ;;
+  stop|clear|reset)
+    send_ipc stop
+    ;;
+  popup|open|menu)
+    send_ipc toggle
+    ;;
+  status)
+    show_status "$@"
+    ;;
+  is-active)
+    is_active
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  *)
+    # If a number is passed directly e.g. "omarchy-pomodoro 50 10"
+    if [[ $cmd =~ ^[0-9]+$ ]]; then
+      work=$cmd
+      break_time=${1:-5}
+      send_ipc start "$work" "$break_time"
+    else
+      usage
+      exit 1
+    fi
+    ;;
+esac

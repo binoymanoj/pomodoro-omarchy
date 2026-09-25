@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "id": "pomodoro",
+  "name": "Pomodoro Timer",
+  "version": "1.0.0",
+  "author": "binoymanoj",
+  "license": "MIT",
+  "homepage": "https://github.com/binoymanoj/pomodoro-omarchy",
+  "description": "Minimal Pomodoro timer for Omarchy showing remaining time and phase icon in the bar with template presets, custom intervals, notifications, and popup controls",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Pomodoro Timer",
+    "description": "Remaining work/break countdown on topbar with template presets, custom timer, and quick controls",
+    "category": "Productivity",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "showWhenIdle": true,
+      "defaultWork": 25,
+      "defaultBreak": 5,
+      "autoStartBreak": true,
+      "autoStartWork": false,
+      "soundAlert": true
+    },
+    "schema": [
+      {
+        "key": "showWhenIdle",
+        "type": "boolean",
+        "label": "Show icon when idle",
+        "defaultValue": true,
+        "description": "Display the minimal pomodoro icon on the bar even when idle."
+      },
+      {
+        "key": "defaultWork",
+        "type": "integer",
+        "label": "Default work duration (min)",
+        "min": 1,
+        "max": 180,
+        "step": 1,
+        "defaultValue": 25,
+        "description": "Default minutes for focus session."
+      },
+      {
+        "key": "defaultBreak",
+        "type": "integer",
+        "label": "Default break duration (min)",
+        "min": 1,
+        "max": 60,
+        "step": 1,
+        "defaultValue": 5,
+        "description": "Default minutes for break session."
+      },
+      {
+        "key": "autoStartBreak",
+        "type": "boolean",
+        "label": "Auto-start break",
+        "defaultValue": true,
+        "description": "Automatically transition to break timer when work finishes."
+      },
+      {
+        "key": "autoStartWork",
+        "type": "boolean",
+        "label": "Auto-start next work session",
+        "defaultValue": false,
+        "description": "Automatically begin the next work session when break completes."
+      },
+      {
+        "key": "soundAlert",
+        "type": "boolean",
+        "label": "Sound alert chime",
+        "defaultValue": true,
+        "description": "Play an audible alert chime when a session finishes."
+      }
+    ]
+  }
+}
