@@ -8,7 +8,7 @@ import "PomodoroModel.js" as Model
 
 BarWidget {
   id: root
-  moduleName: "pomodoro"
+  moduleName: "pomodoro-omarchy"
 
   // Settings State
   property bool showWhenIdle: true
@@ -249,7 +249,43 @@ BarWidget {
     }
   }
 
-  // Shell IPC Target
+  // Shell IPC Targets (pomodoro-omarchy & backward-compatible pomodoro)
+  IpcHandler {
+    target: "pomodoro-omarchy"
+
+    function start(workMin: string, breakMin: string): void {
+      var w = parseInt(workMin) || root.defaultWork
+      var b = parseInt(breakMin) || root.defaultBreak
+      root.startTimer(w, b)
+    }
+    function startBreak(breakMin: string): void {
+      var b = parseInt(breakMin) || root.breakMinutes || root.defaultBreak
+      root.breakMinutes = Math.max(1, b)
+      root.startBreakPhase()
+    }
+    function togglePause(): void { root.togglePause() }
+    function pause(): void { root.pauseTimer() }
+    function resume(): void { root.resumeTimer() }
+    function stop(): void { root.stopTimer() }
+    function skip(): void { root.skipPhase() }
+    function open(): void { root.open() }
+    function close(): void { root.close() }
+    function toggle(): void { root.toggle() }
+    function refresh(): void { root.reloadState() }
+    function status(): string {
+      return JSON.stringify({
+        phase: root.phase,
+        running: root.running,
+        paused: root.paused,
+        remainingSeconds: root.remainingSeconds,
+        formatted: root.formattedTime,
+        workMinutes: root.workMinutes,
+        breakMinutes: root.breakMinutes,
+        cycleCount: root.cycleCount
+      })
+    }
+  }
+
   IpcHandler {
     target: "pomodoro"
 

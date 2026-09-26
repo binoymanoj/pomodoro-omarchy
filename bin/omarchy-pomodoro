@@ -26,7 +26,7 @@ format_remaining() {
 send_ipc() {
   local method=$1
   shift || true
-  omarchy-shell pomodoro "$method" "$@" 2>/dev/null || true
+  omarchy-shell pomodoro-omarchy "$method" "$@" 2>/dev/null || omarchy-shell pomodoro "$method" "$@" 2>/dev/null || true
 }
 
 open_custom_prompt() {

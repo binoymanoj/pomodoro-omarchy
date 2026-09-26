@@ -75,17 +75,17 @@ omarchy plugin add https://github.com/binoymanoj/pomodoro-omarchy.git --enable -
 To update to the latest version at any time:
 
 ```bash
-omarchy plugin update pomodoro --yes
+omarchy plugin update pomodoro-omarchy --yes
 ```
 
 ### 2. Manual Installation (Clone & Symlink)
 
 ```bash
 git clone https://github.com/binoymanoj/pomodoro-omarchy.git ~/Codes/personal/pomodoro-omarchy
-ln -sfn ~/Codes/personal/pomodoro-omarchy ~/.config/omarchy/plugins/pomodoro
+ln -sfn ~/Codes/personal/pomodoro-omarchy ~/.config/omarchy/plugins/pomodoro-omarchy
 ln -sf ~/Codes/personal/pomodoro-omarchy/bin/omarchy-pomodoro ~/.local/bin/omarchy-pomodoro
 omarchy-shell shell rescanPlugins
-omarchy plugin enable pomodoro
+omarchy plugin enable pomodoro-omarchy
 ```
 
 ### 3. Add to Trigger System Menu
@@ -179,7 +179,7 @@ omarchy-pomodoro popup           # Toggle the bar popout panel
 
 ## ⚙️ Configuration Schema
 
-Configure in `~/.config/omarchy/shell.json` under your `pomodoro` layout entry:
+Configure in `~/.config/omarchy/shell.json` under your `pomodoro-omarchy` layout entry:
 
 | Setting | Type | Default | Description |
 |---|---|---|---|
@@ -194,7 +194,7 @@ Example `~/.config/omarchy/shell.json` entry:
 
 ```json
 {
-  "id": "pomodoro",
+  "id": "pomodoro-omarchy",
   "showWhenIdle": true,
   "defaultWork": 25,
   "defaultBreak": 5,
@@ -209,7 +209,7 @@ Example `~/.config/omarchy/shell.json` entry:
 ## 🗑️ Uninstallation
 
 ```bash
-omarchy plugin remove pomodoro --yes
+omarchy plugin remove pomodoro-omarchy --yes
 ```
 
 ---

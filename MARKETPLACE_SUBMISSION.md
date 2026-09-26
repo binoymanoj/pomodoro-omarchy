@@ -201,4 +201,4 @@ Before running `gh issue create`, verify each of the following:
 - [x] **Preview Image**: `preview.png` is at repo root and optimized (297 KB <= 384 KB).
 - [x] **Manifest Validation**: `omarchy-plugin-validate .` exits with code `0`.
 - [x] **README Instructions**: Contains both installation (`omarchy plugin add ...`) and removal instructions (`omarchy plugin remove ...`).
-- [ ] **Plugin ID**: Update `manifest.json` from `pomodoro` to `pomodoro-omarchy` to avoid the duplicate ID collision with Ronnie's existing plugin.
+- [x] **Plugin ID**: Updated to `pomodoro-omarchy` (verified unique and fully compatible with both `pomodoro-omarchy` and legacy `pomodoro` calls).
